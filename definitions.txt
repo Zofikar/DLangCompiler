@@ -1,0 +1,45 @@
+TYPE
+IDENTIFIER
+NUMERIC_LITERAL
+STRING_LITERAL
+
+or_empty(T) = T | %empty
+expression_list = expression_list "," expression
+|   expression
+
+expression = expression BIN_OP expression
+|   UN_OP expression
+|   expression "++"
+|   expression "--"
+|   var_definition
+|   IDENTIFIER
+|   NUMERIC_LITERAL
+|   STRING_LITERAL
+|   "("expression_list")"
+var_assignment = IDENTIFIER "=" expression
+var_definition = TYPE IDENTIFIER
+|   TYPE var_assignment
+|   IDENTIFIER ":=" expression
+|   "mut" var_definition
+
+var_definition_list(sep_ = "'") = var_definition_list sep_ var_definition
+|   var_definition
+
+func_definition = "func" IDENTIFIER "("or_empty(var_definition_list)")" statement
+func_call = IDENTIFIER "("or_empty(expression_list)")"
+struct_definition = "struct" IDENTIFIER "{" var_definition_list(";") "}"
+struct_init = IDENTIFIER "{" or_empty(expression_list) "}"
+|  func_call
+
+statement_list = statement_list statement
+|   %empty
+
+statement = ";"
+|   if "("expression")" statement
+|   if "("expression")" statement else statement
+|   while "("expression")" statement
+|   for "("expression";" expression";" expression")" statement
+|   expression ";"
+|   "{" statement_list "}"
+|   func_definition
+|   struct_definition
