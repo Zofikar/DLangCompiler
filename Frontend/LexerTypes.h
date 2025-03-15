@@ -10,6 +10,14 @@ enum class TokenType{
     type = identifier,
     keyword,
     symbol,
+    comparison_operator,
+    arithmetic_operator,
+    bitwise_operator,
+    logical_operator,
+    assignment_operator,
+    inc_operator,
+    dec_operator,
+    un_operator
   };
 
 static_assert(TokenType::identifier == TokenType::type); // Just to indicate that token will take type as identifier

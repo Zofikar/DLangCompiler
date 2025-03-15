@@ -14,7 +14,7 @@ public:
 private:
     Token stringLiteral_();
     Token numericLiteral_();
-    Token symbol_();
+    Token operator_();
     Token indetLike_();
     void skipWhitespace_();
     void skipOneLineComment_();
@@ -22,7 +22,7 @@ private:
     char getChar_();
     char peekChar_();
     void consume_();
-    bool isSymbol() const;
+    [[nodiscard]] bool isOperator_() const;
 
     bool m_consumed{true};
     char m_currChar{};

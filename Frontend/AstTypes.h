@@ -38,9 +38,9 @@ enum class BinaryOperator
     rshift,
     bit_and,
     bit_or,
+    bit_xor,
     logical_and,
     logical_or,
-    logical_xor,
 };
 
 enum class UnaryOperator

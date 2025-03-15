@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28.1)
+cmake_minimum_required(VERSION 3.30.0)
 project(randomCompiler)
 
 include(Thirdparty.cmake)
@@ -10,4 +10,4 @@ add_executable(randomCompiler
         Frontend/Lexer.cpp
 )
 
-target_include_directories(randomCompiler PRIVATE Helpers Frontend ${magic_enum_SOURCE_DIR}/include)
+target_include_directories(randomCompiler PRIVATE Helpers Frontend)

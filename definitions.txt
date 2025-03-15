@@ -1,45 +1,50 @@
-TYPE
-IDENTIFIER
-NUMERIC_LITERAL
-STRING_LITERAL
+lib = lib function
+|     function
+variable_type_declaration = TYPE | "mut" TYPE | %error
+params = variable_declaration_list "," variable_type_declaration
+|        variable_type_declaration
+function = IDENTIFIER "(" params ")" statement
+statements = statements statement
+identifiers_list = identifiers_list "," IDENTIFIER
+|                  IDENTIFIER
+variable_declaration = IDENTIFIER
+|                      IDENTIFIER "=" expression
+variable_declaration_list = variable_declaration_list "," variable_declaration
+|                           variable_declaration
+statement = "{" statements "}"
+|           "if" "(" expression ")" statement
+|           "if" "(" expression ")" statement "else" statement
+|           "while" "(" expression ")" statement
+|           "return" expression ";"
+|           variable_type_declaration variable_declaration_list ";"
+|           IDENTIFIER ":=" expression ";"
+|           expression ";"
+|           ";"
+expressions = expressions "," expression
+|            expression
+expression = INTEGER_LITERAL
+|            STRING_LITERAL
+|            IDENTIFIER
+|            "(" expression ")"
+|            expression "[" expression "]"
+|            "(" expressions ")"
+|            expression BIN_OP expression
+|            UN_OP expression
+|            INC_OP expression
+|            DEC_OP expression
+|            expression INC_OP
+|            expression DEC_OP
+|            expression "?" expression ":" expression
 
-or_empty(T) = T | %empty
-expression_list = expression_list "," expression
-|   expression
+comparison_operators = "<" | ">" | "<=" | ">=" | "==" | "!="
+arithmetic_operators = "*" | "/" | "%" | "+" | "-"
+bitwise_operators = "&" | "|" | "^" | "<<" | ">>"
+logical_operators = "&&" | "||"
+assignment_operators = "=" | logical_operators"=" | arithmetic_operators"=" | bitwise_operators"="
 
-expression = expression BIN_OP expression
-|   UN_OP expression
-|   expression "++"
-|   expression "--"
-|   var_definition
-|   IDENTIFIER
-|   NUMERIC_LITERAL
-|   STRING_LITERAL
-|   "("expression_list")"
-var_assignment = IDENTIFIER "=" expression
-var_definition = TYPE IDENTIFIER
-|   TYPE var_assignment
-|   IDENTIFIER ":=" expression
-|   "mut" var_definition
+BIN_OP = comparison_operators | arithmetic_operators | bitwise_operators | logical_operators | assignment_operators
 
-var_definition_list(sep_ = "'") = var_definition_list sep_ var_definition
-|   var_definition
+INC_OP = "++"
+DEC_OP = "--"
 
-func_definition = "func" IDENTIFIER "("or_empty(var_definition_list)")" statement
-func_call = IDENTIFIER "("or_empty(expression_list)")"
-struct_definition = "struct" IDENTIFIER "{" var_definition_list(";") "}"
-struct_init = IDENTIFIER "{" or_empty(expression_list) "}"
-|  func_call
-
-statement_list = statement_list statement
-|   %empty
-
-statement = ";"
-|   if "("expression")" statement
-|   if "("expression")" statement else statement
-|   while "("expression")" statement
-|   for "("expression";" expression";" expression")" statement
-|   expression ";"
-|   "{" statement_list "}"
-|   func_definition
-|   struct_definition
+UN_OP =  "!" | "~" | "-"

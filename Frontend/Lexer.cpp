@@ -2,13 +2,53 @@
 #include "LexerErrors.h"
 #include "Asserts.h"
 #include "CommonDefs.h"
+#include "PrefixTree.h"
 
 #include <array>
 #include <ranges>
 
-Lexer::Lexer(std::istream& source) : m_rSource(source)
-{
-}
+using namespace std::string_view_literals;
+
+inline constexpr std::array k_comparisonOperators = {"<"sv, ">"sv, "<="sv, ">="sv, "=="sv, "!="sv};
+inline constexpr std::array k_arithmeticOperators = {"*"sv, "/"sv, "%"sv, "+"sv, "-"sv};
+inline constexpr std::array k_bitwiseOperators = {"&"sv, "|"sv, "^"sv, "<<"sv, ">>"sv};
+inline constexpr std::array k_logicalOperators = {"&&"sv, "||"sv};
+inline constexpr std::array k_assignmentOperators = {
+    "="sv,
+    ":="sv,
+    "*="sv,
+    "/="sv,
+    "%="sv,
+    "+="sv,
+    "-="sv,
+    "&="sv,
+    "|="sv,
+    "^="sv,
+    "<<="sv,
+    ">>="sv,
+    "&&="sv,
+    "||="sv
+};
+inline constexpr auto k_incOperator = "++"sv;
+inline constexpr auto k_decOperator = "--"sv;
+inline constexpr std::array k_unaryOperators = {"!"sv, "~"sv, "-"sv};
+
+const PrefixTree k_operatorsTree = ([] {
+    PrefixTree tree{};
+    tree.insert(k_comparisonOperators, TokenType::comparison_operator);
+    tree.insert(k_arithmeticOperators, TokenType::arithmetic_operator);
+    tree.insert(k_bitwiseOperators, TokenType::bitwise_operator);
+    tree.insert(k_logicalOperators, TokenType::logical_operator);
+    tree.insert(k_assignmentOperators, TokenType::assignment_operator);
+    tree.insert(k_incOperator, TokenType::inc_operator);
+    tree.insert(k_decOperator, TokenType::dec_operator);
+    tree.insert(k_unaryOperators, TokenType::un_operator);
+    return tree;
+})();
+
+
+Lexer::Lexer(std::istream &source)
+    : m_rSource(source) {}
 
 Token Lexer::getNextToken()
 {
@@ -19,14 +59,8 @@ Token Lexer::getNextToken()
             consume_();
             continue;
         }
-        if (m_currChar == '"')
-        {
-            return this->stringLiteral_();
-        }
-        if (std::isdigit(m_currChar))
-        {
-            return this->numericLiteral_();
-        }
+        if (m_currChar == '"') { return this->stringLiteral_(); }
+        if (std::isdigit(m_currChar)) { return this->numericLiteral_(); }
         if (m_currChar == '/')
         {
             if (peekChar_() == '/')
@@ -46,15 +80,10 @@ Token Lexer::getNextToken()
                 continue;
             }
         }
-        if (isSymbol())
-        {
-            return this->symbol_();
-        }
-        if (std::isalpha(m_currChar))
-        {
-            return this->indetLike_();
-        }
-        throw IllegalCharacterError("Unexpected character", this->m_currLocalization);
+        if (isOperator_()) { return this->operator_(); }
+        if (std::isalpha(m_currChar)) { return this->indetLike_(); }
+        consume_();
+        return Token{TokenType::symbol, std::string(1, m_currChar), this->m_currLocalization};
     }
     return Token{TokenType::eof, "EOF", this->m_currLocalization};
 };
@@ -74,13 +103,18 @@ Token Lexer::stringLiteral_()
         {
             switch (peekChar_())
             {
-            case 'n': buffer += '\n'; break;
-            case 't': buffer += '\t'; break;
-            case 'r': buffer += '\r'; break;
-            case '"': buffer += '"'; break;
-            case '\\': buffer += '\\'; break;
-            case 0: throw UnexpectedEndOfFileError(this->m_currLocalization);
-            default: throw IllegalCharacterError("Unexpected escape sequence", this->m_currLocalization);
+                case 'n': buffer += '\n';
+                    break;
+                case 't': buffer += '\t';
+                    break;
+                case 'r': buffer += '\r';
+                    break;
+                case '"': buffer += '"';
+                    break;
+                case '\\': buffer += '\\';
+                    break;
+                case 0: throw UnexpectedEndOfFileError(this->m_currLocalization);
+                default: throw IllegalCharacterError("Unexpected escape sequence", this->m_currLocalization);
             }
             consume_();
             getChar_();
@@ -115,13 +149,11 @@ Token Lexer::numericLiteral_()
                 throw IllegalCharacterError("Unexpected character", this->m_currLocalization);
             }
             isDecimal = true;
-        }
-        else if (m_currChar == '_' || m_currChar == '`')
+        } else if (m_currChar == '_' || m_currChar == '`')
         {
             consume_();
             continue;
-        }
-        else if (!std::isdigit(m_currChar))
+        } else if (!std::isdigit(m_currChar))
         {
             consume_();
             return Token{TokenType::numeric_literal, buffer, this->m_currLocalization};
@@ -132,60 +164,29 @@ Token Lexer::numericLiteral_()
     return Token{TokenType::numeric_literal, buffer, this->m_currLocalization};
 }
 
-Token Lexer::symbol_()
+Token Lexer::operator_()
 {
     std::string buffer{m_currChar};
     consume_();
-    switch (m_currChar)
+    while (getChar_())
     {
-    case '&':
-    case '|':
-    case '+':
-    case '-':
-    case '/':
-        if (peekChar_() == m_currChar)
+        auto it = k_operatorsTree.find(buffer).value();
+        auto it2 = it.find(m_currChar);
+        if(it.oType.has_value() && !it2)
         {
-            getChar_();
             consume_();
-            buffer += m_currChar;
+            return Token{it.oType.value(), buffer, this->m_currLocalization};
         }
-    case ':':
-    case '*':
-    case '%':
-    case '?':
-    case '!':
-    case '=':
-    case '^':
-        if (peekChar_() == '=')
+        if(it2)
         {
-            getChar_();
-            consume_();
             buffer += m_currChar;
-        }
-        break;
-    case '<':
-    case '>':
-        if (peekChar_() == '=')
+            consume_();
+        } else
         {
-            getChar_();
-            consume_();
-            buffer += m_currChar;
+            throw IllegalCharacterError("Unexpected character", this->m_currLocalization);
         }
-        else if (peekChar_() == m_currChar)
-        {
-            getChar_();
-            consume_();
-            buffer += m_currChar;
-            if (peekChar_() == '=')
-            {
-                getChar_();
-                consume_();
-                buffer += m_currChar;
-            }
-        }
-    default: break;
     }
-    return Token{TokenType::symbol, buffer, this->m_currLocalization};
+    throw UnexpectedEndOfFileError(this->m_currLocalization);
 }
 
 Token Lexer::indetLike_()
@@ -194,10 +195,7 @@ Token Lexer::indetLike_()
     consume_();
     while (getChar_())
     {
-        if (std::isspace(m_currChar) || isSymbol())
-        {
-            break;
-        }
+        if (std::isspace(m_currChar) || isOperator_()) { break; }
         consume_();
         buffer += m_currChar;
         if (std::ranges::find(k_keywords, buffer) != k_keywords.end())
@@ -208,23 +206,15 @@ Token Lexer::indetLike_()
     return Token{TokenType::identifier, buffer, this->m_currLocalization};
 }
 
-void Lexer::skipWhitespace_()
-{
-    while (getChar_())
-    {
-        if (std::isspace(m_currChar))
-        {
-            consume_();
-        }
-    }
-}
+void Lexer::skipWhitespace_() { while (getChar_()) { if (std::isspace(m_currChar)) { consume_(); } } }
 
 void Lexer::skipOneLineComment_()
 {
     while (getChar_())
     {
         consume_();
-        if (m_currChar == '\n') [[unlikely]]
+        if (m_currChar == '\n')
+        [[unlikely]]
         {
             return;
         }
@@ -237,7 +227,8 @@ void Lexer::skipBlockComment()
     while (getChar_())
     {
         consume_(); // consume the '*'
-        if (m_currChar == '*' && peekChar_() == '/') [[unlikely]]
+        if (m_currChar == '*' && peekChar_() == '/')
+        [[unlikely]]
         {
             getChar_(); // get the '/'
             consume_(); // consume the '/'
@@ -246,65 +237,24 @@ void Lexer::skipBlockComment()
     }
 }
 
-char Lexer::peekChar_()
-{
-    return static_cast<char>(m_rSource.peek());
-};
+char Lexer::peekChar_() { return static_cast<char>(m_rSource.peek()); };
 
 char Lexer::getChar_()
 {
     if (!m_consumed) return m_currChar;
-    if (!this->m_rSource.get(m_currChar))
-    {
-        return 0;
-    }
+    if (!this->m_rSource.get(m_currChar)) { return 0; }
     if (m_currChar == '\n')
     {
         this->m_currLocalization.line++;
         this->m_currLocalization.column = 0;
-    }
-    else
-    {
-        this->m_currLocalization.column++;
-    }
+    } else { this->m_currLocalization.column++; }
     m_consumed = false;
     return m_currChar;
 }
 
-void Lexer::consume_()
-{
-    m_consumed = true;
-}
+void Lexer::consume_() { m_consumed = true; }
 
-bool Lexer::isSymbol() const
+bool Lexer::isOperator_() const
 {
-    switch (m_currChar)
-    {
-    case '(':
-    case ')':
-    case '{':
-    case '}':
-    case '[':
-    case ']':
-    case ';':
-    case ':':
-    case ',':
-    case '.':
-    case '*':
-    case '/':        // handled separately as it can be a comment
-    case '%':
-    case '+':
-    case '-':
-    case '=':
-    case '<':
-    case '>':
-    case '!':
-    case '~':
-    case '&':
-    case '|':
-    case '^':
-    case '?' :
-        return true;
-    default: return false;
-    }
+    return k_operatorsTree.find(m_currChar).has_value();
 };

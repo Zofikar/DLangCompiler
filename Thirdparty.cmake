@@ -7,3 +7,8 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(magic_enum)
+
+include_directories(
+        ${magic_enum_SOURCE_DIR}/include
+        ${frozen_SOURCE_DIR}/include
+)
