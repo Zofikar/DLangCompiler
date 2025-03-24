@@ -26,11 +26,13 @@ struct Localization {
     size_t line;
     size_t column;
     std::string file;
+
+    [[nodiscard]] std::string toString() const { return file + "(" + std::to_string(line) + ":" + std::to_string(column) + ")"; }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Localization& obj)
 {
-    os << std::to_string(obj.line) << ":" << std::to_string(obj.column);
+    os << obj.toString();
     return os;
 }
 

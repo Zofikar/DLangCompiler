@@ -1,8 +1,7 @@
-#include "Lexer.h"
-#include "LexerErrors.h"
-#include "Asserts.h"
-#include "CommonDefs.h"
-#include "PrefixTree.h"
+#include <Frontend/Lexer.h>
+#include <Frontend/LexerErrors.h>
+#include <Frontend/CommonDefs.h>
+#include <Frontend/PrefixTree.h>
 
 #include <array>
 #include <ranges>
@@ -204,11 +203,10 @@ Token Lexer::indetLike_()
     consume_();
     while (getChar_())
     {
-        if (std::isspace(m_currChar)) { break; }
+        if (!std::isalpha(m_currChar)) { break; }
         consume_();
         buffer += m_currChar;
-        if (std::ranges::find(k_keywords, buffer) != k_keywords.end() && (
-                std::isspace(peekChar_()) || isOperator_(peekChar_())))
+        if (std::ranges::find(k_keywords, buffer) != k_keywords.end() && !std::isalpha(peekChar_()))
         {
             return Token{TokenType::keyword, buffer, this->m_currLocalization};
         }

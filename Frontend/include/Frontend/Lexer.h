@@ -1,9 +1,9 @@
 #pragma once
 
+#include <Frontend/LexerTypes.h>
+
 #include <filesystem>
 #include <fstream>
-
-#include "LexerTypes.h"
 
 class Lexer
 {

@@ -1,21 +1,18 @@
 #pragma once
 
-#include <stdexcept>
+#include <Frontend/LexerTypes.h>
 
-#include "LexerTypes.h"
+#include <stdexcept>
 
 class LexerError : public std::runtime_error
 {
 public:
     explicit LexerError(std::string const &message, Localization const &localization, bool const recoverable = true)
-        : std::runtime_error(
-            localization.file + "(" + std::to_string(localization.line) + ":" + std::to_string(localization.column) +
-            "): " + message)
+        : std::runtime_error((localization.toString() + ": " + message).c_str())
         , localization(localization)
         , recoverable(recoverable) {}
 
     [[nodiscard]] Localization getLocalization() const { return localization; }
-    [[nodiscard]] const char *what() const noexcept override { return std::runtime_error::what(); }
     [[nodiscard]] bool isRecoverable() const { return recoverable; }
 
 private:

@@ -1,5 +1,7 @@
 #pragma once
-#include <Lexer.h>
+
+#include <Frontend/Lexer.h>
+
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -9,7 +11,7 @@
 class Parser
 {
 public:
-    Parser(Lexer &lexer);
+    explicit Parser(Lexer &lexer);
 
     typedef std::unordered_map<std::string, std::string> Signature;
 

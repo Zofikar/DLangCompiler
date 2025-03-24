@@ -1,8 +1,10 @@
-#include <iostream>
-#include "Frontend/Lexer.h"
-#include "Frontend/LexerErrors.h"
+#include <Frontend/Lexer.h>
+#include <Frontend/LexerErrors.h>
 
 #include <magic_enum/magic_enum.hpp>
+
+#include <iostream>
+
 
 int main(int argc, char* argv[])
 {
@@ -19,7 +21,8 @@ int main(int argc, char* argv[])
         try
         {
             token = lexer.getNextToken();
-            std::cout << "Token: \"" << token.value << "\", type: " << magic_enum::enum_name(token.type) << ", at (" << token.localization << ")\n";
+            std::cout << "Token: \"" << token.value << "\", type: " << magic_enum::enum_name(token.type) << ", " <<
+                    token.localization << "\n";
         } catch (LexerError &e)
         {
             std::cerr << e.what() << std::endl;

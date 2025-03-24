@@ -1,6 +1,9 @@
+#pragma once
+
+#include <Frontend/LexerTypes.h>
+
 #include <optional>
 #include <unordered_map>
-#include "LexerTypes.h"
 
 struct PrefixTree
 {
