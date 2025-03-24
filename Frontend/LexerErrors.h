@@ -7,27 +7,37 @@
 class LexerError : public std::runtime_error
 {
 public:
-    explicit LexerError(const std::string &message, const Localization localization) : std::runtime_error(message), localization(localization) {}
+    explicit LexerError(std::string const &message, Localization const &localization, bool const recoverable = true)
+        : std::runtime_error(
+            localization.file + "(" + std::to_string(localization.line) + ":" + std::to_string(localization.column) +
+            "): " + message)
+        , localization(localization)
+        , recoverable(recoverable) {}
+
     [[nodiscard]] Localization getLocalization() const { return localization; }
-    [[nodiscard]] const char *what() const noexcept override
-    {
-        return (std::string(std::runtime_error::what()) + " at line " + std::to_string(localization.line) + " column " + std::to_string(localization.column)).c_str();
-    }
+    [[nodiscard]] const char *what() const noexcept override { return std::runtime_error::what(); }
+    [[nodiscard]] bool isRecoverable() const { return recoverable; }
+
 private:
-    const Localization localization;
+    Localization const localization;
+    bool const recoverable;
 };
 
 
-class IllegalCharacterError : LexerError
+class IllegalCharacterError : public LexerError
 {
 public:
-    explicit IllegalCharacterError(const std::string &message, const Localization localization) : LexerError(message, localization) {}
+    explicit IllegalCharacterError(
+        const std::string &message,
+        const Localization localization,
+        bool const recoverable = true)
+        : LexerError(message, localization, recoverable) {}
 };
 
-class UnexpectedEndOfFileError : IllegalCharacterError
+class UnexpectedEndOfFileError : public IllegalCharacterError
 {
 public:
-    explicit UnexpectedEndOfFileError(const Localization localization) : IllegalCharacterError(message, localization) {}
+    explicit UnexpectedEndOfFileError(const Localization localization) : IllegalCharacterError(message, localization, false) {}
 private:
     static constexpr auto message = "Unexpected end of file";
 };

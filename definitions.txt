@@ -1,22 +1,33 @@
-lib = lib function
-|     function
-variable_type_declaration = TYPE | "mut" TYPE | %error
-params = variable_declaration_list "," variable_type_declaration
-|        variable_type_declaration
-function = IDENTIFIER "(" params ")" statement
+lib = lib global_allowed
+|     global_allowed
+global_allowed = function | variable_declaration | struct_declaration
+type_declaration = TYPE | "mut" TYPE
+params = variable_declaration_list "," type_declaration
+|        type_declaration
+function_declaration = "fn" IDENTIFIER "(" params ")" type_declaration
+function_declaration_list = function_declaration_list function_declaration
+|                           function_declaration
+function = function_declaration statement
+function_list = function_list function
+|               function
+function_call = IDENTIFIER "(" expressions ")"
 statements = statements statement
 identifiers_list = identifiers_list "," IDENTIFIER
 |                  IDENTIFIER
-variable_declaration = IDENTIFIER
+variable_identifier_declaration = IDENTIFIER
 |                      IDENTIFIER "=" expression
-variable_declaration_list = variable_declaration_list "," variable_declaration
-|                           variable_declaration
+variable_declaration_list = variable_declaration_list "," variable_identifier_declaration
+|                           variable_identifier_declaration
+variable_declaration = type_declaration variable`_declaration_list
+struct_declaration = "struct" IDENTIFIER "{" variable_declaration_list "}"
+trait_declaration = "trait" IDENTIFIER "{" function_declaration_list "}"
+trait_implementation = "struct" IDENTIFIER "impl" IDENTIFIER "{" function_declaration_list "}"
 statement = "{" statements "}"
 |           "if" "(" expression ")" statement
 |           "if" "(" expression ")" statement "else" statement
 |           "while" "(" expression ")" statement
 |           "return" expression ";"
-|           variable_type_declaration variable_declaration_list ";"
+|           variable_declaration ";"
 |           IDENTIFIER ":=" expression ";"
 |           expression ";"
 |           ";"
@@ -25,7 +36,6 @@ expressions = expressions "," expression
 expression = INTEGER_LITERAL
 |            STRING_LITERAL
 |            IDENTIFIER
-|            "(" expression ")"
 |            expression "[" expression "]"
 |            "(" expressions ")"
 |            expression BIN_OP expression
@@ -35,7 +45,7 @@ expression = INTEGER_LITERAL
 |            expression INC_OP
 |            expression DEC_OP
 |            expression "?" expression ":" expression
-
+|            function_call
 comparison_operators = "<" | ">" | "<=" | ">=" | "==" | "!="
 arithmetic_operators = "*" | "/" | "%" | "+" | "-"
 bitwise_operators = "&" | "|" | "^" | "<<" | ">>"

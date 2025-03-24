@@ -47,8 +47,9 @@ const PrefixTree k_operatorsTree = ([] {
 })();
 
 
-Lexer::Lexer(std::istream &source)
-    : m_rSource(source) {}
+Lexer::Lexer(std::istream &source, std::string const &file)
+    : m_rSource(source)
+    , m_currLocalization(1, 0, file) {}
 
 Token Lexer::getNextToken()
 {
@@ -80,12 +81,21 @@ Token Lexer::getNextToken()
                 continue;
             }
         }
-        if (isOperator_()) { return this->operator_(); }
+        if (isOperator_(m_currChar)) { return this->operator_(); }
         if (std::isalpha(m_currChar)) { return this->indetLike_(); }
         consume_();
         return Token{TokenType::symbol, std::string(1, m_currChar), this->m_currLocalization};
     }
-    return Token{TokenType::eof, "EOF", this->m_currLocalization};
+    return Token{TokenType::eof, "", this->m_currLocalization};
+}
+
+void Lexer::recoverError()
+{
+    while (getChar_())
+    {
+        if (m_currChar == ';' || m_currChar == '}') { return; }
+        consume_();
+    }
 };
 
 Token Lexer::stringLiteral_()
@@ -146,7 +156,7 @@ Token Lexer::numericLiteral_()
             if (isDecimal)
             {
                 consume_();
-                throw IllegalCharacterError("Unexpected character", this->m_currLocalization);
+                throw IllegalCharacterError("Unexpected character: ", this->m_currLocalization);
             }
             isDecimal = true;
         } else if (m_currChar == '_' || m_currChar == '`')
@@ -174,7 +184,6 @@ Token Lexer::operator_()
         auto it2 = it.find(m_currChar);
         if(it.oType.has_value() && !it2)
         {
-            consume_();
             return Token{it.oType.value(), buffer, this->m_currLocalization};
         }
         if(it2)
@@ -195,10 +204,11 @@ Token Lexer::indetLike_()
     consume_();
     while (getChar_())
     {
-        if (std::isspace(m_currChar) || isOperator_()) { break; }
+        if (std::isspace(m_currChar)) { break; }
         consume_();
         buffer += m_currChar;
-        if (std::ranges::find(k_keywords, buffer) != k_keywords.end())
+        if (std::ranges::find(k_keywords, buffer) != k_keywords.end() && (
+                std::isspace(peekChar_()) || isOperator_(peekChar_())))
         {
             return Token{TokenType::keyword, buffer, this->m_currLocalization};
         }
@@ -219,7 +229,6 @@ void Lexer::skipOneLineComment_()
             return;
         }
     }
-    // EOF is valid, do not consume!
 }
 
 void Lexer::skipBlockComment()
@@ -254,7 +263,7 @@ char Lexer::getChar_()
 
 void Lexer::consume_() { m_consumed = true; }
 
-bool Lexer::isOperator_() const
+bool Lexer::isOperator_(char const c)
 {
-    return k_operatorsTree.find(m_currChar).has_value();
+    return k_operatorsTree.find(c).has_value();
 };

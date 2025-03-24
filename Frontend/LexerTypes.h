@@ -25,6 +25,7 @@ static_assert(TokenType::identifier == TokenType::type); // Just to indicate tha
 struct Localization {
     size_t line;
     size_t column;
+    std::string file;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Localization& obj)
@@ -37,5 +38,5 @@ inline std::ostream& operator<<(std::ostream& os, const Localization& obj)
 struct Token {
     TokenType type{TokenType::eof};
     std::string value;
-    Localization localization{0,0};
+    Localization localization{0, 0, ""};
 };

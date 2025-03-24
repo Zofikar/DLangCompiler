@@ -11,18 +11,20 @@ int main(int argc, char* argv[])
         std::cout << "Usage: " << argv[0] << " <file>" << std::endl;
         return 1;
     }
-    try
+    std::ifstream file(argv[1]);
+    Lexer lexer(file, argv[1]);
+    Token token;
+    do
     {
-        std::ifstream file(argv[1]);
-        Lexer lexer(file);
-        Token token;
-        do {
+        try
+        {
             token = lexer.getNextToken();
             std::cout << "Token: \"" << token.value << "\", type: " << magic_enum::enum_name(token.type) << ", at (" << token.localization << ")\n";
-        } while (token.type != TokenType::eof);
-    } catch (LexerError& e)
-    {
-        std::cout << e.what() << std::endl;
-    }
+        } catch (LexerError &e)
+        {
+            std::cerr << e.what() << std::endl;
+            if (e.isRecoverable()) { lexer.recoverError(); } else { return 1; }
+        }
+    } while (token.type != TokenType::eof);
     return 0;
 }

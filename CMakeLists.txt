@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 23)
 add_executable(randomCompiler
         main.cpp
         Frontend/Lexer.cpp
+        Frontend/Parser.cpp
 )
 
 target_include_directories(randomCompiler PRIVATE Helpers Frontend)

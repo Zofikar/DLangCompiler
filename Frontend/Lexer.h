@@ -8,8 +8,9 @@
 class Lexer
 {
 public:
-    explicit Lexer(std::istream& source);
+    explicit Lexer(std::istream& source, std::string const& file = "unknown");
     [[nodiscard]] Token getNextToken();
+    void recoverError();
 
 private:
     Token stringLiteral_();
@@ -22,10 +23,10 @@ private:
     char getChar_();
     char peekChar_();
     void consume_();
-    [[nodiscard]] bool isOperator_() const;
+    [[nodiscard]] static bool isOperator_(char c) ;
 
     bool m_consumed{true};
     char m_currChar{};
+    Localization m_currLocalization;
     std::istream& m_rSource;
-    Localization m_currLocalization{1, 0};
 };

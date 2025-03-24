@@ -1,5 +1,8 @@
-test := "some\"\\string\n\ttab"; // this is one line comment
-mut float32 a = -912 /* this is block comment
-it can end on next line*/;
-a  += 9.12;
-a >>= 1;
+fn add(a: i32, b: i32) -> i32 {
+    let c = a + b;
+    return c;
+}
+fn sub(a: i32, b: i32) -> i32 {
+    return add(a, -b);
+}
+foo := "bar";
