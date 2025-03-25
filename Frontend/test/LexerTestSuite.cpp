@@ -274,3 +274,35 @@ TEST(Lexer, numericLiteralWithBackticks)
     EXPECT_EQ(token.type, TokenType::numeric_literal);
     EXPECT_EQ(token.value, "1000000");
 }
+
+TEST(Lexer, functionDeclaration)
+{
+    std::istringstream is("fn sub(i32 a, i32 b) i32 { return a - b; }");
+    std::array expectedTokens = {
+        TokenType::keyword,
+        TokenType::identifier,
+        TokenType::symbol,
+        TokenType::type,
+        TokenType::identifier,
+        TokenType::symbol,
+        TokenType::type,
+        TokenType::identifier,
+        TokenType::symbol,
+        TokenType::type,
+        TokenType::symbol,
+        TokenType::keyword,
+        TokenType::identifier,
+        TokenType::arithmetic_operator,
+        TokenType::identifier,
+        TokenType::symbol,
+        TokenType::symbol,
+        TokenType::eof
+    };
+    Lexer lexer(is);
+    for (auto const &expected: expectedTokens)
+    {
+        auto const token = lexer.getNextToken();
+        EXPECT_EQ(expected, token.type) << "Expected " << magic_enum::enum_name(expected) << " but got " <<
+ magic_enum::enum_name(token.type) << " with value " << token.value;
+    }
+}

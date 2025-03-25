@@ -3,6 +3,8 @@
 #include <Frontend/CommonDefs.h>
 #include <Frontend/PrefixTree.h>
 
+#include <frozen/unordered_set.h>
+
 #include <array>
 #include <ranges>
 
@@ -30,7 +32,7 @@ inline constexpr std::array k_assignmentOperators = {
 };
 inline constexpr auto k_incOperator = "++"sv;
 inline constexpr auto k_decOperator = "--"sv;
-inline constexpr std::array k_unaryOperators = {"!"sv, "~"sv, "-"sv};
+inline constexpr std::array k_unaryOperators = {"!"sv, "~"sv}; // omit - as it's arithmetic operator also, will handle conflict later
 
 const PrefixTree k_operatorsTree = ([] {
     PrefixTree tree{};
@@ -44,6 +46,9 @@ const PrefixTree k_operatorsTree = ([] {
     tree.insert(k_unaryOperators, TokenType::un_operator);
     return tree;
 })();
+
+inline constexpr std::array kf_symbols{'{','}','(',')','[',']',',',';','.'};
+inline constexpr frozen::unordered_set<char, kf_symbols.size()> k_symbols{'{','}','(',')','[',']',',',';','.'};
 
 
 Lexer::Lexer(std::istream &source, std::string const &file)
@@ -83,7 +88,9 @@ Token Lexer::getNextToken()
         if (isOperator_(m_currChar)) { return this->operator_(); }
         if (std::isalpha(m_currChar)) { return this->indetLike_(); }
         consume_();
-        return Token{TokenType::symbol, std::string(1, m_currChar), this->m_currLocalization};
+        if (isValidSymbol_(m_currChar))
+            return Token{TokenType::symbol, std::string(1, m_currChar), this->m_currLocalization};
+        throw IllegalCharacterError("Unexpected character: " + m_currChar, this->m_currLocalization);
     }
     return Token{TokenType::eof, "", this->m_currLocalization};
 }
@@ -202,7 +209,7 @@ Token Lexer::indetLike_()
     consume_();
     while (getChar_())
     {
-        if (!std::isalpha(m_currChar)) { break; }
+        if (std::isspace(m_currChar) || isOperator_(m_currChar) || isValidSymbol_(m_currChar)) { break; }
         consume_();
         buffer += m_currChar;
         if (std::ranges::find(k_keywords, buffer) != k_keywords.end() && !std::isalpha(peekChar_()))
@@ -260,6 +267,11 @@ char Lexer::getChar_()
 }
 
 void Lexer::consume_() { m_consumed = true; }
+
+bool Lexer::isValidSymbol_(char const c)
+{
+    return k_symbols.contains(c);
+}
 
 bool Lexer::isOperator_(char const c)
 {

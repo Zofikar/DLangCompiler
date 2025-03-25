@@ -16,8 +16,17 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(gtest)
 
+FetchContent_Declare(
+        frozen
+        GIT_REPOSITORY https://github.com/serge-sans-paille/frozen.git
+        GIT_TAG        1.2.0
+)
+
+FetchContent_MakeAvailable(frozen)
+
 include_directories(
         ${magic_enum_SOURCE_DIR}/include
+        ${frozen_SOURCE_DIR}/include
         ${gtest_SOURCE_DIR}/googlemock/include
         ${gtest_SOURCE_DIR}/googletest/include
 )

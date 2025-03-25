@@ -1,8 +1,8 @@
-fn add(a: i32, b: i32) -> i32 {
+fn add(a: i32, b: i32) i32 {
     let c = a + b;
     return c;
 }
-fn sub(a: i32, b: i32) -> i32 {
+fn sub(a: i32, b: i32) i32 {
     return add(a, -b);
 }
 foo := "bar";

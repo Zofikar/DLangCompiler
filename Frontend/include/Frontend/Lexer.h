@@ -23,10 +23,11 @@ private:
     char getChar_();
     char peekChar_();
     void consume_();
+    [[nodiscard]] static bool isValidSymbol_(char c);
     [[nodiscard]] static bool isOperator_(char c) ;
 
     bool m_consumed{true};
     char m_currChar{};
-    Localization m_currLocalization;
     std::istream& m_rSource;
+    Localization m_currLocalization;
 };
