@@ -164,7 +164,6 @@ Token Lexer::numericLiteral_()
             continue;
         } else if (!std::isdigit(m_currChar))
         {
-            consume_();
             return Token{TokenType::numeric_literal, buffer, this->m_currLocalization};
         }
         consume_();
@@ -242,6 +241,7 @@ void Lexer::skipBlockComment()
             return;
         }
     }
+    throw UnexpectedEndOfFileError(this->m_currLocalization);
 }
 
 char Lexer::peekChar_() { return static_cast<char>(m_rSource.peek()); };

@@ -1,4 +1,5 @@
 #include <Frontend/Lexer.h>
+#include <Frontend/LexerErrors.h>
 #include <Frontend/LexerTypes.h>
 
 #include <gtest/gtest.h>
@@ -154,6 +155,7 @@ TEST(Lexer, ifStatement)
         TokenType::comparison_operator,
         TokenType::numeric_literal,
         TokenType::symbol,
+        TokenType::symbol,
         TokenType::identifier,
         TokenType::inc_operator,
         TokenType::symbol,
@@ -179,6 +181,7 @@ TEST(Lexer, ifElseStatement)
         TokenType::comparison_operator,
         TokenType::numeric_literal,
         TokenType::symbol,
+        TokenType::symbol,
         TokenType::identifier,
         TokenType::inc_operator,
         TokenType::symbol,
@@ -198,4 +201,76 @@ TEST(Lexer, ifElseStatement)
         EXPECT_EQ(expected, token.type) << "Expected " << magic_enum::enum_name(expected) << " but got " <<
  magic_enum::enum_name(token.type) << " with value " << token.value;
     }
+}
+
+TEST(Lexer, unterminatedBlockComment)
+{
+    std::istringstream is("/* unterminated comment");
+    Lexer lexer(is);
+    EXPECT_THROW(lexer.getNextToken(), UnexpectedEndOfFileError);
+}
+
+TEST(Lexer, singleLineComment)
+{
+    std::istringstream is("// this is a comment\nx := 42;");
+    std::array expectedTokens = {
+        TokenType::identifier,
+        TokenType::assignment_operator,
+        TokenType::numeric_literal,
+        TokenType::symbol,
+        TokenType::eof
+    };
+    Lexer lexer(is);
+    for (auto const &expected: expectedTokens)
+    {
+        auto const token = lexer.getNextToken();
+        EXPECT_EQ(expected, token.type) << "Expected " << magic_enum::enum_name(expected) << " but got " <<
+ magic_enum::enum_name(token.type) << " with value " << token.value;
+    }
+}
+
+TEST(Lexer, blockComment)
+{
+    std::istringstream is("/* this is a comment */  x := 42;");
+    std::array expectedTokens = {
+        TokenType::identifier,
+        TokenType::assignment_operator,
+        TokenType::numeric_literal,
+        TokenType::symbol,
+        TokenType::eof
+    };
+    Lexer lexer(is);
+    for (auto const &expected: expectedTokens)
+    {
+        auto const token = lexer.getNextToken();
+        EXPECT_EQ(expected, token.type) << "Expected " << magic_enum::enum_name(expected) << " but got " <<
+ magic_enum::enum_name(token.type) << " with value " << token.value;
+    }
+}
+
+TEST(Lexer, stringLiteralWithNewline)
+{
+    std::istringstream is("\"string with newline\n\"");
+    Lexer lexer(is);
+    EXPECT_THROW(lexer.getNextToken(), IllegalCharacterError);
+}
+
+TEST(Lexer, numericLiteralWithUnderscores)
+{
+    std::string const expected = "1_000_000";
+    std::istringstream is(expected);
+    Lexer lexer(is);
+    Token token = lexer.getNextToken();
+    EXPECT_EQ(token.type, TokenType::numeric_literal);
+    EXPECT_EQ(token.value, "1000000");
+}
+
+TEST(Lexer, numericLiteralWithBackticks)
+{
+    std::string const expected = "1`000`000";
+    std::istringstream is(expected);
+    Lexer lexer(is);
+    Token token = lexer.getNextToken();
+    EXPECT_EQ(token.type, TokenType::numeric_literal);
+    EXPECT_EQ(token.value, "1000000");
 }
